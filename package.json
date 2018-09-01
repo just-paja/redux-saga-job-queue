@@ -1,0 +1,44 @@
+{
+  "name": "redux-saga-job-queue",
+  "version": "1.0.0",
+  "description": "Queue same redux saga tasks and run them in a batch",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "eslint src",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/just-paja/redux-saga-job-queue.git"
+  },
+  "keywords": [
+    "redux",
+    "saga",
+    "queue",
+    "jobs",
+    "batch"
+  ],
+  "author": "Pavel Žák <pavel@zak.global>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/just-paja/redux-saga-job-queue/issues"
+  },
+  "homepage": "https://github.com/just-paja/redux-saga-job-queue#readme",
+  "dependencies": {
+    "babel-preset-es2015": "^6.24.1",
+    "eslint": "^5.5.0",
+    "eslint-config-airbnb": "^17.1.0",
+    "eslint-plugin-filenames": "^1.3.2",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jest": "^21.22.0",
+    "eslint-plugin-jsx-a11y": "^6.1.1",
+    "eslint-plugin-react": "^7.11.1",
+    "redux-saga": "^0.16.0"
+  },
+  "devDependencies": {
+    "jest": "^23.5.0",
+    "redux": "^4.0.0",
+    "redux-saga-tester": "^1.0.379",
+    "sinon": "^6.1.5"
+  }
+}
