@@ -26,6 +26,11 @@
   "bugs": {
     "url": "https://github.com/just-paja/redux-saga-job-queue/issues"
   },
+  "files": [
+    "lib",
+    "LICENSE",
+    "README.md"
+  ],
   "homepage": "https://github.com/just-paja/redux-saga-job-queue#readme",
   "dependencies": {
     "babel-preset-es2015": "^6.24.1",

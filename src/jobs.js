@@ -41,15 +41,15 @@ export const createInteractiveQueue = ({
   let runChannel;
   let jobRunner;
 
-  function* handleRequest(requestChannel) {
+  function* handleRequest() {
     while (!jobCounter.isFinished()) {
-      const payload = yield take(requestChannel);
+      const payload = yield take(runChannel);
       yield jobRunner(payload);
     }
   }
 
   function* watchRequests() {
-    yield all(Array(jobCounter.concurrency).fill(fork(handleRequest, runChannel)));
+    yield all(Array(jobCounter.concurrency).fill(fork(handleRequest)));
     while (!jobCounter.isPrepared()) {
       const { payload } = yield take(addTaskChannel);
       yield put(runChannel, payload);
