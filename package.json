@@ -36,6 +36,8 @@
     "redux-saga": "^0.16.0"
   },
   "devDependencies": {
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "jest": "^23.5.0",
     "redux": "^4.0.0",
     "redux-saga-tester": "^1.0.379",
