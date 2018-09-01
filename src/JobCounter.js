@@ -1,11 +1,15 @@
 export default class JobCounter {
-  constructor(tasks, concurrency = 3) {
-    this.setTasks(tasks);
+  constructor(concurrency = 3) {
+    this.tasks = [];
     this.setConcurrency(concurrency);
   }
 
   addTask(task) {
     this.tasks.push(task);
+  }
+
+  addTasks(tasks) {
+    this.tasks = this.tasks.concat(tasks);
   }
 
   getDone() {
@@ -46,10 +50,6 @@ export default class JobCounter {
 
   setConcurrency(concurrency) {
     this.concurrency = concurrency;
-  }
-
-  setTasks(tasks) {
-    this.tasks = [...tasks];
   }
 }
 

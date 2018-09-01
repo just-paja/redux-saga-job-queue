@@ -12,16 +12,6 @@ import {
 
 const mockJobCounter = (...args) => {
   const jobCounter = new JobCounter(...args);
-  sinon.stub(jobCounter, 'addTask');
-  sinon.stub(jobCounter, 'getDone');
-  sinon.stub(jobCounter, 'getPrepared');
-  sinon.stub(jobCounter, 'getStats');
-  sinon.stub(jobCounter, 'getTotal');
-  sinon.stub(jobCounter, 'incrementDone');
-  sinon.stub(jobCounter, 'incrementPrepared');
-  sinon.stub(jobCounter, 'isFinished');
-  sinon.stub(jobCounter, 'setConcurrency');
-  sinon.stub(jobCounter, 'setTasks');
   return jobCounter;
 };
 
@@ -46,7 +36,7 @@ describe('jobs sagas', () => {
   });
 
   afterEach(() => {
-    clock.restore();
+    // clock.restore();
   });
 
   it('createJob returns a generator', () => {
@@ -57,7 +47,7 @@ describe('jobs sagas', () => {
     const jobFactory = sinon.spy();
     const runJob = createJob({
       allDoneChannel,
-      jobCounter: mockJobCounter([]),
+      jobCounter: mockJobCounter(),
       jobFactory,
     });
     sagaTester.run(runJob);
@@ -66,7 +56,9 @@ describe('jobs sagas', () => {
 
   it('createJob.runJob increments done when job finished', () => {
     const jobFactory = sinon.spy();
-    const jobCounter = mockJobCounter(['foo']);
+    const jobCounter = mockJobCounter();
+    sinon.stub(jobCounter, 'incrementDone');
+    jobCounter.addTasks(['foo']);
     const runJob = createJob({
       allDoneChannel,
       jobCounter,
@@ -78,9 +70,10 @@ describe('jobs sagas', () => {
 
   it('createJob.runJob puts jobs done action when it is the last task', () => {
     const jobFactory = sinon.spy();
-    const jobCounter = mockJobCounter(['foo']);
-    jobCounter.getTotal.returns(1);
-    jobCounter.getDone.returns(1);
+    const jobCounter = mockJobCounter();
+    jobCounter.addTasks(['foo']);
+    jobCounter.incrementPrepared();
+    jobCounter.incrementDone();
     const runJob = createJob({
       allDoneChannel,
       jobCounter,
@@ -111,7 +104,7 @@ describe('jobs sagas', () => {
   it('createInteractiveQueue.run runs all tasks in packets', () => {
     function* jobFactory(item) {
       yield put({ type: 'TEST', item });
-      yield new Promise(res => setTimeout(res, 5));
+      yield new Promise(resolve => clock.setTimeout(resolve, 5));
     }
     const items = ['foo', 'bar', 'zoo', 'tar', 'voo', 'xar'];
     const queue = createInteractiveQueue({
@@ -119,14 +112,37 @@ describe('jobs sagas', () => {
       jobFactory,
       concurrency: 2,
     });
-    sagaTester.run(queue.run);
+    sagaTester.start(queue.run);
     clock.tick(5);
     expect(sagaTester.numCalled('TEST')).toEqual(2);
     clock.tick(5);
-    return sagaTester.waitFor('TEST', () => {
-      expect(sagaTester.numCalled('TEST')).toEqual(4);
-      clock.tick(5);
-      expect(sagaTester.numCalled('TEST')).toEqual(6);
+    return sagaTester.waitFor('TEST')
+      .then(() => {
+        expect(sagaTester.numCalled('TEST')).toEqual(4);
+        clock.tick(5);
+      })
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => {
+        expect(sagaTester.numCalled('TEST')).toEqual(6);
+      });
+  });
+
+  it('createInteractiveQueue.run marks queue done on finish', () => {
+    function* jobFactory(item) {
+      yield put({ type: 'TEST', item });
+      // yield new Promise(res => clock.setTimeout(res, 5));
+    }
+    function* onFinish() {
+      yield put({ type: 'TEST_FINISHED' });
+    }
+    const items = ['foo', 'bar', 'zoo'];
+    const queue = createInteractiveQueue({
+      items,
+      jobFactory,
+      concurrency: 2,
+      onFinish,
     });
+    sagaTester.run(queue.run);
+    expect(queue).toHaveProperty('done', true);
   });
 });

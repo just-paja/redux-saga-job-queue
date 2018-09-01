@@ -8,6 +8,7 @@ import {
 } from 'redux-saga/effects';
 
 import JobCounter from './JobCounter';
+import Queue from './Queue';
 
 import { jobsDone } from './actions';
 
@@ -22,7 +23,7 @@ export const createJob = ({
       yield call(jobFactory, { payload, meta });
     } finally {
       jobCounter.incrementDone();
-      if (jobCounter.getTotal() === jobCounter.getDone()) {
+      if (jobCounter.isFinished()) {
         yield allDoneChannel.put(jobsDone());
       }
     }
@@ -33,37 +34,39 @@ export const createInteractiveQueue = ({
   jobFactory,
   items,
   concurrency = 3,
+  onFinish,
   ...other
 }) => {
-  let addTaskChannel;
   let allDoneChannel;
   let jobCounter;
-  let runChannel;
   let jobRunner;
+  let prepareChannel;
+  let runChannel;
+  const queue = new Queue();
 
   function* handleRequest() {
     while (!jobCounter.isFinished()) {
       const payload = yield take(runChannel);
-      yield jobRunner(payload);
+      yield call(jobRunner, payload);
     }
   }
 
   function* watchRequests() {
     yield all(Array(jobCounter.concurrency).fill(fork(handleRequest)));
     while (!jobCounter.isPrepared()) {
-      const { payload } = yield take(addTaskChannel);
+      const { payload } = yield take(prepareChannel);
       yield put(runChannel, payload);
       jobCounter.incrementPrepared();
     }
-    addTaskChannel.close();
+    prepareChannel.close();
     runChannel.close();
   }
 
   function* run() {
-    addTaskChannel = yield call(channel, buffers.expanding());
+    prepareChannel = yield call(channel, buffers.expanding());
     runChannel = yield call(channel, buffers.expanding());
     allDoneChannel = yield call(channel);
-    jobCounter = new JobCounter(items, concurrency);
+    jobCounter = new JobCounter(concurrency);
     jobRunner = createJob({
       allDoneChannel,
       jobCounter,
@@ -71,12 +74,16 @@ export const createInteractiveQueue = ({
       ...other,
     });
 
+    jobCounter.addTasks(items);
     yield fork(watchRequests);
-    yield all(items.map(payload => put(addTaskChannel, { payload })));
+    yield all(items.map(payload => put(prepareChannel, { payload })));
     yield take(allDoneChannel);
+    queue.setDone();
+    if (onFinish) {
+      yield call(onFinish);
+    }
   }
 
-  return {
-    run,
-  };
+  queue.run = run;
+  return queue;
 };
