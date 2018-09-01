@@ -2,8 +2,11 @@
   "name": "redux-saga-job-queue",
   "version": "0.1.0",
   "description": "Queue same redux saga tasks and run them in a batch",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
+    "build": "babel -d lib src --ignore *test*",
+    "clean": "rimraf lib",
+    "prepack": "npm run clean && npm test && npm run build",
     "pretest": "eslint src",
     "test": "jest"
   },
@@ -36,6 +39,7 @@
     "redux-saga": "^0.16.0"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-plugin-transform-runtime": "^6.23.0",
     "jest": "^23.5.0",
