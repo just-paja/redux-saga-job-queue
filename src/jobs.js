@@ -7,7 +7,6 @@ import {
   take,
 } from 'redux-saga/effects';
 
-import JobCounter from './JobCounter';
 import Queue from './Queue';
 
 import { jobsDone } from './actions';
@@ -36,12 +35,11 @@ export const createInteractiveQueue = ({
   concurrency = 3,
   ...other
 }) => {
+  const jobCounter = new Queue(concurrency);
   let allDoneChannel;
-  let jobCounter;
   let jobRunner;
   let prepareChannel;
   let runChannel;
-  const queue = new Queue();
 
   function* handleRequest() {
     while (!jobCounter.isFinished()) {
@@ -65,7 +63,6 @@ export const createInteractiveQueue = ({
     prepareChannel = yield call(channel, buffers.expanding());
     runChannel = yield call(channel, buffers.expanding());
     allDoneChannel = yield call(channel);
-    jobCounter = new JobCounter(concurrency);
     jobRunner = createJob({
       allDoneChannel,
       jobCounter,
@@ -77,9 +74,8 @@ export const createInteractiveQueue = ({
     yield fork(watchRequests);
     yield all(items.map(payload => put(prepareChannel, { payload })));
     yield take(allDoneChannel);
-    queue.setDone();
   }
 
-  queue.run = run;
-  return queue;
+  jobCounter.run = run;
+  return jobCounter;
 };

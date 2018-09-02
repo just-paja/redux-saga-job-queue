@@ -7,15 +7,15 @@ import { channel } from 'redux-saga';
 import {
   createInteractiveQueue,
   createJob,
-  JobCounter,
+  Queue,
 } from '..';
 
 const mockJobCounter = (...args) => {
-  const jobCounter = new JobCounter(...args);
+  const jobCounter = new Queue(...args);
   return jobCounter;
 };
 
-describe('jobs sagas', () => {
+describe('jobs saga', () => {
   let allDoneChannel;
   let sagaTester;
   let onError;
@@ -139,6 +139,6 @@ describe('jobs sagas', () => {
       concurrency: 2,
     });
     sagaTester.run(queue.run);
-    expect(queue).toHaveProperty('done', true);
+    expect(queue.isFinished()).toBe(true);
   });
 });
