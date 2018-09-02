@@ -34,7 +34,6 @@ export const createInteractiveQueue = ({
   jobFactory,
   items,
   concurrency = 3,
-  onFinish,
   ...other
 }) => {
   let allDoneChannel;
@@ -79,9 +78,6 @@ export const createInteractiveQueue = ({
     yield all(items.map(payload => put(prepareChannel, { payload })));
     yield take(allDoneChannel);
     queue.setDone();
-    if (onFinish) {
-      yield call(onFinish);
-    }
   }
 
   queue.run = run;

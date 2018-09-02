@@ -132,15 +132,11 @@ describe('jobs sagas', () => {
       yield put({ type: 'TEST', item });
       // yield new Promise(res => clock.setTimeout(res, 5));
     }
-    function* onFinish() {
-      yield put({ type: 'TEST_FINISHED' });
-    }
     const items = ['foo', 'bar', 'zoo'];
     const queue = createInteractiveQueue({
       items,
       jobFactory,
       concurrency: 2,
-      onFinish,
     });
     sagaTester.run(queue.run);
     expect(queue).toHaveProperty('done', true);
