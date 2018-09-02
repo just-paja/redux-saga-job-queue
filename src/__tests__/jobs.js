@@ -141,4 +141,27 @@ describe('jobs saga', () => {
     sagaTester.run(queue.run);
     expect(queue.isFinished()).toBe(true);
   });
+
+  it('createInteractiveQueue.addItems to the running queue', () => {
+    function* jobFactory(item) {
+      yield put({ type: 'TEST', item });
+      yield new Promise(res => clock.setTimeout(res, 5));
+    }
+    const items = ['foo', 'bar', 'zoo'];
+    const queue = createInteractiveQueue({
+      items,
+      jobFactory,
+      concurrency: 2,
+    });
+    sagaTester.run(queue.run);
+    clock.tick(5);
+    sagaTester.run(queue.addItems, ['zxc', 'vbn']);
+    return sagaTester
+      .waitFor('TEST')
+      .then(() => clock.tick(5))
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => clock.tick(5))
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => expect(sagaTester.numCalled('TEST')).toBe(5));
+  });
 });
