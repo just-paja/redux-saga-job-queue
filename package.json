@@ -1,6 +1,6 @@
 {
   "name": "redux-saga-job-queue",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Queue same redux saga tasks and run them in a batch",
   "main": "lib/index.js",
   "scripts": {
