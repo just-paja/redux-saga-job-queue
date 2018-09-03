@@ -1,7 +1,7 @@
 import SagaTester from 'redux-saga-tester';
 import sinon from 'sinon';
 
-import { put } from 'redux-saga/effects';
+import { call, put } from 'redux-saga/effects';
 import { channel } from 'redux-saga';
 
 import { createQueue, createJob, Queue } from '..';
@@ -156,6 +156,26 @@ describe('jobs saga', () => {
     });
     sagaTester.run(queue.run);
     expect(queue.isFinished()).toBe(true);
+  });
+
+  it('createQueue.run finishes running', () => {
+    function* jobFactory(item) {
+      yield put({ type: 'TEST', item });
+      // yield new Promise(res => clock.setTimeout(res, 5));
+    }
+    const items = ['foo', 'bar', 'zoo'];
+    const queue = createQueue({
+      items,
+      jobFactory,
+      concurrency: 2,
+    });
+    function* testSaga() {
+      yield call(queue.run);
+      yield put({ type: 'TEST_FINISHED' });
+    }
+    sagaTester.run(testSaga);
+    return sagaTester.waitFor('TEST_FINISHED')
+      .then(() => expect(queue.isFinished()).toBe(true));
   });
 
   it('createQueue.addItems to the running queue', () => {

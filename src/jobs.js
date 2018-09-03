@@ -128,7 +128,7 @@ export const createQueue = ({
       jobFactory,
       ...other,
     });
-    yield call(addItems, items);
+    yield fork(addItems, items);
     yield take(allDoneChannel);
     runChannel.close();
   }
