@@ -15,11 +15,11 @@ export const createJob = ({
   allDoneChannel,
   jobCounter,
   jobFactory,
-  ...meta
+  ...other
 }) => (
-  function* runJob(payload) {
+  function* runJob({ payload, meta }) {
     try {
-      yield call(jobFactory, { payload, meta });
+      yield call(jobFactory, { payload, meta: { ...other, ...meta } });
     } finally {
       jobCounter.incrementDone();
       if (jobCounter.isFinished()) {
@@ -29,7 +29,7 @@ export const createJob = ({
   }
 );
 
-export const createInteractiveQueue = ({
+export const createQueue = ({
   jobFactory,
   items,
   concurrency = 3,
@@ -47,8 +47,8 @@ export const createInteractiveQueue = ({
    */
   function* handleRequest() {
     while (!jobCounter.isFinished()) {
-      const payload = yield take(runChannel);
-      yield call(jobRunner, payload);
+      const action = yield take(runChannel);
+      yield call(jobRunner, action);
     }
   }
 
@@ -61,8 +61,8 @@ export const createInteractiveQueue = ({
   function* watchAddedItems() {
     yield all(Array(jobCounter.concurrency).fill(fork(handleRequest)));
     while (!jobCounter.isPrepared()) {
-      const { payload } = yield take(prepareChannel);
-      yield put(runChannel, payload);
+      const action = yield take(prepareChannel);
+      yield put(runChannel, action);
       jobCounter.incrementPrepared();
     }
     prepareChannel.close();
@@ -108,7 +108,10 @@ export const createInteractiveQueue = ({
      * consequences, like race conditions
      */
     yield fork(watchAddedItems);
-    yield all(newItems.map(payload => put(prepareChannel, { payload })));
+    yield all(newItems.map((payload, queueIndex) => put(prepareChannel, {
+      payload,
+      meta: { queueIndex },
+    })));
   }
 
   /**

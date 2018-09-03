@@ -4,11 +4,7 @@ import sinon from 'sinon';
 import { put } from 'redux-saga/effects';
 import { channel } from 'redux-saga';
 
-import {
-  createInteractiveQueue,
-  createJob,
-  Queue,
-} from '..';
+import { createQueue, createJob, Queue } from '..';
 
 const mockJobCounter = (...args) => {
   const jobCounter = new Queue(...args);
@@ -50,7 +46,7 @@ describe('jobs saga', () => {
       jobCounter: mockJobCounter(),
       jobFactory,
     });
-    sagaTester.run(runJob);
+    sagaTester.run(runJob, { payload: 'foo' });
     expect(jobFactory.calledOnce).toBeTruthy();
   });
 
@@ -86,14 +82,34 @@ describe('jobs saga', () => {
     }));
   });
 
-  it('createInteractiveQueue provides run saga', () => {
-    expect(createInteractiveQueue({}).run.constructor).toHaveProperty('name', 'GeneratorFunction');
+  it('createQueue provides run saga', () => {
+    expect(createQueue({}).run.constructor).toHaveProperty('name', 'GeneratorFunction');
   });
 
-  it('createInteractiveQueue.run runs all tasks', () => {
+  it('createQueue.run passes queueIndex to items', () => {
     const jobFactory = sinon.spy();
     const items = ['foo', 'bar'];
-    const queue = createInteractiveQueue({
+    const queue = createQueue({
+      items,
+      jobFactory,
+    });
+    sagaTester.run(queue.run);
+    expect(jobFactory.getCall(0).args).toContainEqual(expect.objectContaining({
+      meta: expect.objectContaining({
+        queueIndex: 0,
+      }),
+    }));
+    expect(jobFactory.getCall(1).args).toContainEqual(expect.objectContaining({
+      meta: expect.objectContaining({
+        queueIndex: 1,
+      }),
+    }));
+  });
+
+  it('createQueue.run runs all tasks', () => {
+    const jobFactory = sinon.spy();
+    const items = ['foo', 'bar'];
+    const queue = createQueue({
       items,
       jobFactory,
     });
@@ -101,13 +117,13 @@ describe('jobs saga', () => {
     expect(jobFactory.called).toBeTruthy();
   });
 
-  it('createInteractiveQueue.run runs all tasks in packets', () => {
+  it('createQueue.run runs all tasks in packets', () => {
     function* jobFactory(item) {
       yield put({ type: 'TEST', item });
       yield new Promise(resolve => clock.setTimeout(resolve, 5));
     }
     const items = ['foo', 'bar', 'zoo', 'tar', 'voo', 'xar'];
-    const queue = createInteractiveQueue({
+    const queue = createQueue({
       items,
       jobFactory,
       concurrency: 2,
@@ -127,13 +143,13 @@ describe('jobs saga', () => {
       });
   });
 
-  it('createInteractiveQueue.run marks queue done on finish', () => {
+  it('createQueue.run marks queue done on finish', () => {
     function* jobFactory(item) {
       yield put({ type: 'TEST', item });
       // yield new Promise(res => clock.setTimeout(res, 5));
     }
     const items = ['foo', 'bar', 'zoo'];
-    const queue = createInteractiveQueue({
+    const queue = createQueue({
       items,
       jobFactory,
       concurrency: 2,
@@ -142,13 +158,13 @@ describe('jobs saga', () => {
     expect(queue.isFinished()).toBe(true);
   });
 
-  it('createInteractiveQueue.addItems to the running queue', () => {
+  it('createQueue.addItems to the running queue', () => {
     function* jobFactory(item) {
       yield put({ type: 'TEST', item });
       yield new Promise(res => clock.setTimeout(res, 5));
     }
     const items = ['foo', 'bar', 'zoo'];
-    const queue = createInteractiveQueue({
+    const queue = createQueue({
       items,
       jobFactory,
       concurrency: 2,
