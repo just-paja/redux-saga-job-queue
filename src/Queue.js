@@ -20,6 +20,10 @@ export default class Queue {
     return this.tasksPrepared;
   }
 
+  getRunningForks() {
+    return this.runningForks;
+  }
+
   getStats() {
     return {
       done: this.getDone(),
@@ -40,6 +44,14 @@ export default class Queue {
     this.tasksPrepared += 1;
   }
 
+  incrementRunningForks() {
+    this.runningForks += 1;
+  }
+
+  decrementRunningForks() {
+    this.runningForks -= 1;
+  }
+
   isFinished() {
     return this.getDone() >= this.getTotal();
   }
@@ -55,3 +67,4 @@ export default class Queue {
 
 Queue.prototype.tasksFinished = 0;
 Queue.prototype.tasksPrepared = 0;
+Queue.prototype.runningForks = 0;

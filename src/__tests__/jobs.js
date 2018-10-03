@@ -143,6 +143,40 @@ describe('jobs saga', () => {
       });
   });
 
+  it('createQueue.run runs all tasks in packets', () => {
+    function* jobFactory(item) {
+      yield put({ type: 'TEST', item });
+      yield new Promise(resolve => clock.setTimeout(resolve, 5));
+    }
+    const items = [
+      'foo1', 'bar1', 'zoo1', 'tar1', 'voo1', 'xar1',
+      'foo2', 'bar2', 'zoo2', 'tar2', 'voo2', 'xar2',
+      'foo3', 'bar3', 'zoo3', 'tar3', 'voo3', 'xar3',
+    ];
+    const queue = createQueue({
+      items,
+      jobFactory,
+      concurrency: 3,
+    });
+    sagaTester.start(queue.run);
+    // clock.tick(50);
+    // expect(sagaTester.numCalled('TEST')).toEqual(2);
+    clock.tick(5000);
+    return sagaTester.waitFor('TEST')
+      .then(() => clock.tick(5000))
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => clock.tick(5000))
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => clock.tick(5000))
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => clock.tick(5000))
+      .then(() => sagaTester.waitFor('TEST'))
+      .then(() => {
+        expect(sagaTester.numCalled('TEST')).toEqual(18);
+        clock.tick(50);
+      });
+  });
+
   it('createQueue.run marks queue done on finish', () => {
     function* jobFactory(item) {
       yield put({ type: 'TEST', item });

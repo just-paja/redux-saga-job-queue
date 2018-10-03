@@ -46,10 +46,21 @@ export const createQueue = ({
    * @returns void
    */
   function* handleRequest() {
+    jobCounter.incrementRunningForks();
     while (!jobCounter.isFinished()) {
       const action = yield take(runChannel);
       yield call(jobRunner, action);
     }
+    jobCounter.decrementRunningForks();
+  }
+
+  /**
+   * Starts amount of concurrent forks required to satisfy the settings and the
+   * demand.
+   */
+  function* startConcurrentForks() {
+    const forksRequired = jobCounter.concurrency - jobCounter.getRunningForks();
+    yield all(Array(forksRequired).fill(fork(handleRequest)));
   }
 
   /**
@@ -59,7 +70,7 @@ export const createQueue = ({
    * @returns void
    */
   function* watchAddedItems() {
-    yield all(Array(jobCounter.concurrency).fill(fork(handleRequest)));
+    yield fork(startConcurrentForks);
     while (!jobCounter.isPrepared()) {
       const action = yield take(prepareChannel);
       yield put(runChannel, action);
