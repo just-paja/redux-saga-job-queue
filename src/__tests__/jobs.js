@@ -1,8 +1,8 @@
 import SagaTester from 'redux-saga-tester'
 import sinon from 'sinon'
 
-import { call, put } from 'redux-saga/effects'
-import { channel } from 'redux-saga'
+import { call, put } from '@redux-saga/core/effects'
+import { channel } from '@redux-saga/core'
 
 import { createQueue, createJob, Queue } from '..'
 
@@ -203,7 +203,7 @@ describe('jobs saga', () => {
       .then(() => expect(queue.isFinished()).toBe(true))
   })
 
-  it('createQueue.addItems to the running queue', () => {
+  it('createQueue.addItems adds items to the running queue', () => {
     function * jobFactory (item) {
       yield put({ type: 'TEST', item })
       yield new Promise((resolve, reject) => clock.setTimeout(resolve, 5))

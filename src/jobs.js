@@ -1,11 +1,5 @@
-import { buffers, channel } from 'redux-saga'
-import {
-  all,
-  call,
-  fork,
-  put,
-  take
-} from 'redux-saga/effects'
+import { buffers, channel } from '@redux-saga/core'
+import { all, call, fork, put, take } from '@redux-saga/core/effects'
 
 import Queue from './Queue'
 
@@ -74,7 +68,12 @@ export const createQueue = ({
       yield put(runChannel, action)
       jobCounter.incrementPrepared()
     }
-    prepareChannel.close()
+    closeChannel(prepareChannel)
+  }
+
+  function closeChannel (channelInstance) {
+    channelInstance.close()
+    channelInstance.open = false
   }
 
   /**
@@ -83,14 +82,11 @@ export const createQueue = ({
    * @returns void
    */
   function * reopenChannel (channelInstance) {
-    /** @FIXME Unfortunately, redux-saga does not really expose closed flag, so
-     * we use the dangled __closed__ flag. Should be fixed when redux-saga
-     * exposes this information in a documented way
-     */
-    // eslint-disable-next-line no-underscore-dangle
-    return (!channelInstance || channelInstance.__closed__)
+    const openChannelInstance = (!channelInstance || !channelInstance.open)
       ? yield call(channel, buffers.expanding())
       : channelInstance
+    openChannelInstance.open = true
+    return openChannelInstance
   }
 
   /**
