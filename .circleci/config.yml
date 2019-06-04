@@ -6,7 +6,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:7.10
+      - image: circleci/node:10
 
     working_directory: ~/repo
 
@@ -14,18 +14,16 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - dependencies-
+          - dependencies-{{ checksum "package-lock.json" }}
 
       - run:
           name: Install dependencies
-          command: npm install
+          command: npm ci
 
       - save_cache:
           paths:
-            - node_modules
-          key: dependencies-{{ checksum "package.json" }}
+            - $HOME/.npm
+          key: dependencies-{{ checksum "package-lock.json" }}
 
       - run:
           name: Run tests
