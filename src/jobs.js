@@ -1,33 +1,31 @@
-import { buffers, channel } from 'redux-saga';
+import { buffers, channel } from 'redux-saga'
 import {
   all,
   call,
   fork,
   put,
-  take,
-} from 'redux-saga/effects';
+  take
+} from 'redux-saga/effects'
 
-import Queue from './Queue';
+import Queue from './Queue'
 
-import { jobsDone } from './actions';
+import { jobsDone } from './actions'
 
 export const createJob = ({
   allDoneChannel,
   jobCounter,
   jobFactory,
   ...other
-}) => (
-  function* runJob({ payload, meta }) {
-    try {
-      yield call(jobFactory, { payload, meta: { ...other, ...meta } });
-    } finally {
-      jobCounter.incrementDone();
-      if (jobCounter.isFinished()) {
-        yield allDoneChannel.put(jobsDone());
-      }
+}) => function * runJob ({ payload, meta }) {
+  try {
+    yield call(jobFactory, { payload, meta: { ...other, ...meta } })
+  } finally {
+    jobCounter.incrementDone()
+    if (jobCounter.isFinished()) {
+      yield allDoneChannel.put(jobsDone())
     }
   }
-);
+}
 
 export const createQueue = ({
   jobFactory,
@@ -35,32 +33,32 @@ export const createQueue = ({
   concurrency = 3,
   ...other
 }) => {
-  const jobCounter = new Queue(concurrency);
-  let allDoneChannel;
-  let jobRunner;
-  let prepareChannel;
-  let runChannel;
+  const jobCounter = new Queue(concurrency)
+  let allDoneChannel
+  let jobRunner
+  let prepareChannel
+  let runChannel
 
   /**
    * Run jobs while there are any
    * @returns void
    */
-  function* handleRequest() {
-    jobCounter.incrementRunningForks();
+  function * handleRequest () {
+    jobCounter.incrementRunningForks()
     while (!jobCounter.isFinished()) {
-      const action = yield take(runChannel);
-      yield call(jobRunner, action);
+      const action = yield take(runChannel)
+      yield call(jobRunner, action)
     }
-    jobCounter.decrementRunningForks();
+    jobCounter.decrementRunningForks()
   }
 
   /**
    * Starts amount of concurrent forks required to satisfy the settings and the
    * demand.
    */
-  function* startConcurrentForks() {
-    const forksRequired = jobCounter.concurrency - jobCounter.getRunningForks();
-    yield all(Array(forksRequired).fill(fork(handleRequest)));
+  function * startConcurrentForks () {
+    const forksRequired = jobCounter.concurrency - jobCounter.getRunningForks()
+    yield all(Array(forksRequired).fill(fork(handleRequest)))
   }
 
   /**
@@ -69,14 +67,14 @@ export const createQueue = ({
    * the prepareChannel in the end to prevent memleaks.
    * @returns void
    */
-  function* watchAddedItems() {
-    yield fork(startConcurrentForks);
+  function * watchAddedItems () {
+    yield fork(startConcurrentForks)
     while (!jobCounter.isPrepared()) {
-      const action = yield take(prepareChannel);
-      yield put(runChannel, action);
-      jobCounter.incrementPrepared();
+      const action = yield take(prepareChannel)
+      yield put(runChannel, action)
+      jobCounter.incrementPrepared()
     }
-    prepareChannel.close();
+    prepareChannel.close()
   }
 
   /**
@@ -84,7 +82,7 @@ export const createQueue = ({
    * should not be exposed.
    * @returns void
    */
-  function* reopenChannel(channelInstance) {
+  function * reopenChannel (channelInstance) {
     /** @FIXME Unfortunately, redux-saga does not really expose closed flag, so
      * we use the dangled __closed__ flag. Should be fixed when redux-saga
      * exposes this information in a documented way
@@ -92,7 +90,7 @@ export const createQueue = ({
     // eslint-disable-next-line no-underscore-dangle
     return (!channelInstance || channelInstance.__closed__)
       ? yield call(channel, buffers.expanding())
-      : channelInstance;
+      : channelInstance
   }
 
   /**
@@ -100,9 +98,9 @@ export const createQueue = ({
    * be exposed.
    * @returns void
    */
-  function* openAddChannels() {
-    prepareChannel = yield call(reopenChannel, prepareChannel);
-    runChannel = yield call(reopenChannel, runChannel);
+  function * openAddChannels () {
+    prepareChannel = yield call(reopenChannel, prepareChannel)
+    runChannel = yield call(reopenChannel, runChannel)
   }
 
   /**
@@ -111,18 +109,18 @@ export const createQueue = ({
    * Usage: yield call(queue.addItems, ['item1', 'item2'])
    * @returns void
    */
-  function* addItems(newItems) {
-    yield call(openAddChannels);
-    jobCounter.addTasks(newItems);
+  function * addItems (newItems) {
+    yield call(openAddChannels)
+    jobCounter.addTasks(newItems)
     /* @FIXME There is a potential problem with forking watchAddedItems saga
      * adding items while items are being added might cause unforseen
      * consequences, like race conditions
      */
-    yield fork(watchAddedItems);
+    yield fork(watchAddedItems)
     yield all(newItems.map((payload, queueIndex) => put(prepareChannel, {
       payload,
-      meta: { queueIndex },
-    })));
+      meta: { queueIndex }
+    })))
   }
 
   /**
@@ -131,20 +129,20 @@ export const createQueue = ({
    * Usage: yield call(queue.run)
    * @returns void
    */
-  function* run() {
-    allDoneChannel = yield call(channel);
+  function * run () {
+    allDoneChannel = yield call(channel)
     jobRunner = createJob({
       allDoneChannel,
       jobCounter,
       jobFactory,
-      ...other,
-    });
-    yield fork(addItems, items);
-    yield take(allDoneChannel);
-    runChannel.close();
+      ...other
+    })
+    yield fork(addItems, items)
+    yield take(allDoneChannel)
+    runChannel.close()
   }
 
-  jobCounter.run = run;
-  jobCounter.addItems = addItems;
-  return jobCounter;
-};
+  jobCounter.run = run
+  jobCounter.addItems = addItems
+  return jobCounter
+}

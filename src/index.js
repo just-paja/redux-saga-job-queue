@@ -1,4 +1,4 @@
-export * from './actions';
-export * from './jobs';
+export * from './actions'
+export * from './jobs'
 
-export { default as Queue } from './Queue';
+export { default as Queue } from './Queue'

@@ -1,70 +1,70 @@
 export default class Queue {
-  constructor(concurrency = 3) {
-    this.tasks = [];
-    this.setConcurrency(concurrency);
+  constructor (concurrency = 3) {
+    this.tasks = []
+    this.setConcurrency(concurrency)
   }
 
-  addTask(task) {
-    this.tasks.push(task);
+  addTask (task) {
+    this.tasks.push(task)
   }
 
-  addTasks(tasks) {
-    this.tasks = this.tasks.concat(tasks);
+  addTasks (tasks) {
+    this.tasks = this.tasks.concat(tasks)
   }
 
-  getDone() {
-    return this.tasksFinished;
+  getDone () {
+    return this.tasksFinished
   }
 
-  getPrepared() {
-    return this.tasksPrepared;
+  getPrepared () {
+    return this.tasksPrepared
   }
 
-  getRunningForks() {
-    return this.runningForks;
+  getRunningForks () {
+    return this.runningForks
   }
 
-  getStats() {
+  getStats () {
     return {
       done: this.getDone(),
       prepared: this.getPrepared(),
-      total: this.getTotal(),
-    };
+      total: this.getTotal()
+    }
   }
 
-  getTotal() {
-    return this.tasks.length;
+  getTotal () {
+    return this.tasks.length
   }
 
-  incrementDone() {
-    this.tasksFinished += 1;
+  incrementDone () {
+    this.tasksFinished += 1
   }
 
-  incrementPrepared() {
-    this.tasksPrepared += 1;
+  incrementPrepared () {
+    this.tasksPrepared += 1
   }
 
-  incrementRunningForks() {
-    this.runningForks += 1;
+  incrementRunningForks () {
+    this.runningForks += 1
   }
 
-  decrementRunningForks() {
-    this.runningForks -= 1;
+  decrementRunningForks () {
+    this.runningForks -= 1
   }
 
-  isFinished() {
-    return this.getDone() >= this.getTotal();
+  isFinished () {
+    return this.getDone() >= this.getTotal()
   }
 
-  isPrepared() {
-    return this.getPrepared() >= this.getTotal();
+  isPrepared () {
+    return this.getPrepared() >= this.getTotal()
   }
 
-  setConcurrency(concurrency) {
-    this.concurrency = concurrency;
+  setConcurrency (concurrency) {
+    this.concurrency = concurrency
   }
 }
 
-Queue.prototype.tasksFinished = 0;
-Queue.prototype.tasksPrepared = 0;
-Queue.prototype.runningForks = 0;
+Queue.prototype.tasksFinished = 0
+Queue.prototype.tasksPrepared = 0
+Queue.prototype.runningForks = 0
