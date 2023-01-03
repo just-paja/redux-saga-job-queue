@@ -53,7 +53,7 @@
     "babel-eslint": "^10.0.1",
     "babel-jest": "^24.8.0",
     "jest": "^24.8.0",
-    "jest-runner-standard": "0.0.12",
+    "jest-runner-standard": "0.1.0",
     "redux": "^4.0.0",
     "redux-saga": "^1.0.2",
     "redux-saga-tester": "^1.0.379",
